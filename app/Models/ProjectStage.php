@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class ProjectStage extends Model
 {
     protected $fillable = [
-        'project_id', 'name', 'budget', 'weight_percentage', 'start_date',
+        'project_id', 'name', 'level', 'description', 'estimated_duration',
+        'budget', 'weight_percentage', 'start_date',
         'end_date', 'client_payment_amount', 'completion_percentage', 'status'
     ];
 
@@ -33,5 +34,10 @@ class ProjectStage extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class, 'stage_id');
+    }
+
+    public function tasks()
+    {
+        return $this->hasMany(StageTask::class, 'project_stage_id');
     }
 }

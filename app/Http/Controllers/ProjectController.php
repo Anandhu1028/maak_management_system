@@ -9,10 +9,11 @@ class ProjectController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $projects = \App\Models\Project::with(['client', 'stages'])->latest()->get();
-        return view('admin.projects.index', compact('projects'));
+        $projects = \App\Models\Project::with(['client', 'stages.expenses', 'supervisors'])->latest()->get();
+        $selected_project_id = $request->query('project_id');
+        return view('admin.projects.index', compact('projects', 'selected_project_id'));
     }
 
     /**
@@ -151,6 +152,44 @@ class ProjectController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    public function storeStage(Request $request)
+    {
+        $validated = $request->validate([
+            'project_id' => 'required|exists:projects,id',
+            'name' => 'required|string|max:255',
+            'level' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'estimated_duration' => 'nullable|integer',
+            'internal_budget' => 'required|numeric|min:0',
+            'planned_start' => 'required|date',
+            'planned_end' => 'required|date|after_or_equal:planned_start',
+            'client_payment_linked' => 'required|numeric|min:0',
+        ]);
+
+        $project = \App\Models\Project::findOrFail($request->project_id);
+        
+        // Calculate weight percentage? For now just set to 0 or calculate based on budget relative to project value
+        $weight = 0;
+        if ($project->project_value > 0) {
+            $weight = ($request->client_payment_linked / $project->project_value) * 100;
+        }
+
+        $project->stages()->create([
+            'name' => $request->name,
+            'level' => $request->level,
+            'description' => $request->description,
+            'estimated_duration' => $request->estimated_duration,
+            'budget' => $request->internal_budget,
+            'start_date' => $request->planned_start,
+            'end_date' => $request->planned_end,
+            'client_payment_amount' => $request->client_payment_linked,
+            'weight_percentage' => $weight,
+            'status' => 'Not Started',
+        ]);
+
+        return redirect()->route('admin.projects.show', $project->id)->with('success', 'Stage added successfully.');
+    }
+
     public function destroy(\App\Models\Project $project)
     {
         $project->delete();

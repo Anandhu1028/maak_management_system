@@ -78,14 +78,14 @@
                         <div style="display: flex; gap: 8px; justify-content: flex-end;">
                             <form action="{{ route('admin.expenses.approve', $expense) }}" method="POST" style="display:inline;">
                                 @csrf
-                                <button type="submit" class="btn-premium" style="padding: 6px 10px; background: #dcfce7; color: #166534; border: none; cursor: pointer;" title="Approve">
-                                    <i class="fas fa-check"></i>
+                                <button type="submit" class="btn-premium" style="padding: 6px 10px; background: #dcfce7; color: #166534; border: none; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center;" title="Approve">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 </button>
                             </form>
                             <form action="{{ route('admin.expenses.reject', $expense) }}" method="POST" style="display:inline;">
                                 @csrf
-                                <button type="submit" class="btn-premium" style="padding: 6px 10px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;" title="Reject">
-                                    <i class="fas fa-times"></i>
+                                <button type="submit" class="btn-premium" style="padding: 6px 10px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center;" title="Reject">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                 </button>
                             </form>
                         </div>

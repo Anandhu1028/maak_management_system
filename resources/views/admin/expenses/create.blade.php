@@ -3,66 +3,85 @@
 @section('title', 'Log New Expense')
 
 @section('content')
-<div class="card-premium" style="max-width: 800px; margin: 0 auto;">
-    <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 2rem;">Expense Entry</h2>
+<div class="pl-wrap">
+    <div class="pl-header" style="margin-bottom: 2.5rem;">
+        <div>
+            <h1 class="pl-title">Log New Expense</h1>
+            <p class="pl-subtitle">Secure financial entry for project operations</p>
+        </div>
+        <a href="{{ route('admin.expenses.index') }}" class="btn-new-project" style="background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important;">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
 
-    <form action="{{ route('admin.expenses.store') }}" method="POST">
-        @csrf
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-            <div>
-                <label style="display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem;">Project</label>
-                <select name="project_id" id="project_id" class="form-control" required style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--border);">
-                    <option value="">-- Select Project --</option>
-                    @foreach($projects as $project)
-                        <option value="{{ $project->id }}" {{ $selectedProjectId == $project->id ? 'selected' : '' }}>{{ $project->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label style="display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem;">Stage</label>
-                <select name="stage_id" id="stage_id" class="form-control" required style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--border);">
-                    <option value="">-- Select Stage --</option>
-                    @if($selectedProjectId)
-                        @foreach($projects->find($selectedProjectId)->stages as $stage)
-                            <option value="{{ $stage->id }}" {{ $selectedStageId == $stage->id ? 'selected' : '' }}>{{ $stage->name }}</option>
+    <div class="pl-shell" style="max-width: 900px; margin: 0 auto; padding: 2.5rem !important;">
+        <form action="{{ route('admin.expenses.store') }}" method="POST">
+            @csrf
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                <div class="form-group">
+                    <label style="color: #64748b; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: block;">Target Project</label>
+                    <select name="project_id" id="project_id" class="form-control" required 
+                        style="width: 100%; padding: 1rem; background: rgba(5,5,15,0.6); border: 1px solid rgba(234, 88, 12, 0.15); border-radius: 12px; color: #fff; font-weight: 500;">
+                        <option value="">-- Select Project --</option>
+                        @foreach($projects as $project)
+                            <option value="{{ $project->id }}" {{ $selectedProjectId == $project->id ? 'selected' : '' }}>{{ $project->name }}</option>
                         @endforeach
-                    @endif
-                </select>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="color: #64748b; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: block;">Operational Stage</label>
+                    <select name="stage_id" id="stage_id" class="form-control" required 
+                        style="width: 100%; padding: 1rem; background: rgba(5,5,15,0.6); border: 1px solid rgba(234, 88, 12, 0.15); border-radius: 12px; color: #fff; font-weight: 500;">
+                        <option value="">-- Select Stage --</option>
+                        @if($selectedProjectId)
+                            @foreach($projects->find($selectedProjectId)->stages as $stage)
+                                <option value="{{ $stage->id }}" {{ $selectedStageId == $stage->id ? 'selected' : '' }}>{{ $stage->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
             </div>
-        </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-            <div>
-                <label style="display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem;">Category</label>
-                <select name="category" class="form-control" required style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--border);">
-                    <option>Materials</option>
-                    <option>Labour</option>
-                    <option>Transportation</option>
-                    <option>Equipment Rental</option>
-                    <option>Miscellaneous</option>
-                </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                <div class="form-group">
+                    <label style="color: #64748b; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: block;">Expense Category</label>
+                    <select name="category" class="form-control" required 
+                        style="width: 100%; padding: 1rem; background: rgba(5,5,15,0.6); border: 1px solid rgba(234, 88, 12, 0.15); border-radius: 12px; color: #fff; font-weight: 500;">
+                        <option>Materials</option>
+                        <option>Labour</option>
+                        <option>Transportation</option>
+                        <option>Equipment Rental</option>
+                        <option>Miscellaneous</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="color: #64748b; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: block;">Amount (BHD)</label>
+                    <input type="number" step="0.001" name="amount" class="form-control" required 
+                        placeholder="0.000"
+                        style="width: 100%; padding: 1rem; background: rgba(5,5,15,0.6); border: 1px solid rgba(234, 88, 12, 0.15); border-radius: 12px; color: #fff; font-weight: 600; font-size: 1.1rem;">
+                </div>
             </div>
-            <div>
-                <label style="display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem;">Amount (BHD)</label>
-                <input type="number" step="0.001" name="amount" class="form-control" required style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--border);">
+
+            <div style="margin-bottom: 2rem;">
+                <label style="color: #64748b; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: block;">Transaction Date</label>
+                <input type="date" name="date" class="form-control" value="{{ date('Y-m-d') }}" required 
+                    style="width: 100%; padding: 1rem; background: rgba(5,5,15,0.6); border: 1px solid rgba(234, 88, 12, 0.15); border-radius: 12px; color: #fff;">
             </div>
-        </div>
 
-        <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem;">Date</label>
-            <input type="date" name="date" class="form-control" value="{{ date('Y-m-d') }}" required style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--border);">
-        </div>
+            <div style="margin-bottom: 2.5rem;">
+                <label style="color: #64748b; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: block;">Detailed Description</label>
+                <textarea name="description" rows="4" class="form-control" placeholder="Describe the purpose of this expense..."
+                    style="width: 100%; padding: 1rem; background: rgba(5,5,15,0.6); border: 1px solid rgba(234, 88, 12, 0.15); border-radius: 12px; color: #fff;"></textarea>
+            </div>
 
-        <div style="margin-bottom: 2rem;">
-            <label style="display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem;">Description / Remarks</label>
-            <textarea name="description" rows="3" class="form-control" style="width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--border);"></textarea>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-            <a href="{{ route('admin.expenses.index') }}" class="btn-premium" style="background: #f1f5f9; color: #475569;">Cancel</a>
-            <button type="submit" class="btn-premium">Submit Expense</button>
-        </div>
-    </form>
+            <div style="display: flex; justify-content: flex-end; gap: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem;">
+                <button type="submit" class="btn-new-project" style="padding: 1rem 2.5rem !important;">
+                    <i class="fas fa-paper-plane"></i> Submit Operation
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>

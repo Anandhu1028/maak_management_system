@@ -57,14 +57,14 @@
                     </td>
                     <td style="padding: 1.2rem 0.5rem; text-align: right;">
                         <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                            <a href="{{ route('admin.users.edit', $user) }}" class="btn-premium" style="padding: 6px 10px; background: #eff6ff; color: #2563eb;">
-                                <i class="fas fa-edit"></i>
+                            <a href="{{ route('admin.users.edit', $user) }}" class="btn-premium" style="padding: 6px 10px; background: #eff6ff; color: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                             </a>
                             <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-premium" style="padding: 6px 10px; background: #fff1f2; color: #e11d48;">
-                                    <i class="fas fa-trash"></i>
+                                <button type="submit" class="btn-premium" style="padding: 6px 10px; background: #fff1f2; color: #e11d48; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                                 </button>
                             </form>
                         </div>
