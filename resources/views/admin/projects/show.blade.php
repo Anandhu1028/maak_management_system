@@ -845,5 +845,70 @@
         document.querySelectorAll('.tactical-dropdown').forEach(drop => drop.classList.remove('active'));
     });
 </script>
+
+{{-- Global Strategy Modal --}}
+<div x-show="showStrategyModal" 
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0 scale-95"
+    x-transition:enter-end="opacity-100 scale-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100 scale-100"
+    x-transition:leave-end="opacity-0 scale-95"
+    style="position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(15px); background: rgba(15, 23, 42, 0.75);"
+    x-cloak>
+    
+    <div @click.away="showStrategyModal = false" class="card-premium" style="width: 100%; max-width: 950px; background: #fff; padding: 0; border: none; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.6); display: flex; height: 600px; overflow: hidden; border-radius: 28px;">
+        {{-- Left Pane: Form --}}
+        <div style="flex: 1.2; padding: 3.5rem; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column;">
+            <div style="margin-bottom: 2.5rem;">
+                <h2 style="font-size: 1.8rem; font-weight: 900; color: #0f172a; margin: 0;">Strategic Planning</h2>
+                <p style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Define weighted sub-tasks for operational intelligence.</p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 1.8rem; flex: 1;">
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Target Phase</label>
+                    <select x-model="strategyStageId" @change="fetchPlannedTasks()" style="width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 16px; font-weight: 700; background: #f8fafc;">
+                        <option value="">Select Phase...</option>
+                        @foreach($project->stages as $s)
+                        <option value="{{ $s->id }}">{{ $s->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Objective Name</label>
+                    <input type="text" x-model="strategyTaskName" placeholder="e.g. Columns reinforcement" style="width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 16px; font-weight: 700;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Weight (%)</label>
+                    <input type="number" x-model="strategyTaskWeight" placeholder="0.00" style="width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 16px; font-weight: 700;">
+                </div>
+                <button @click="deployObjective()" style="width: 100%; background: #0f172a; color: #fff; border: none; padding: 18px; border-radius: 20px; font-weight: 900; cursor: pointer; margin-top: auto;">
+                    Deploy Objective
+                </button>
+            </div>
+        </div>
+        {{-- Right Pane: Ledger --}}
+        <div style="width: 380px; background: #f8fafc; padding: 3rem; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h3 style="font-size: 0.85rem; font-weight: 900; color: #0f172a; text-transform: uppercase;">Strategy Ledger</h3>
+                <button @click="showStrategyModal = false" style="background: none; border: none; color: #94a3b8; cursor: pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                <template x-for="ptask in plannedTasks" :key="ptask.id">
+                    <div style="background: #fff; padding: 15px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between;">
+                        <div style="font-size: 0.85rem; font-weight: 800;" x-text="ptask.name"></div>
+                        <div style="font-size: 0.8rem; font-weight: 900; color: #10b981;" x-text="ptask.weight + '%'"></div>
+                    </div>
+                </template>
+            </div>
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px dashed #e2e8f0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-size: 0.75rem; font-weight: 900; color: #64748b;">TOTAL WEIGHT</span>
+                    <span style="font-size: 1.1rem; font-weight: 900;" x-text="plannedTasks.reduce((acc, t) => acc + parseFloat(t.weight), 0).toFixed(1) + '%'"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endpush
 @endsection
