@@ -195,11 +195,85 @@
         .btn-premium, .quick-actions, .portal-transition, .top-bar, .sidebar { display: none !important; }
         .card-premium, .show-banner, .stage-item { border: 1px solid #eee !important; box-shadow: none !important; color: #000 !important; }
     }
+
+    [x-cloak] { display: none !important; }
+
+    /* ── Strategy Modal Styles ── */
+    .strategy-modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+        backdrop-filter: blur(20px);
+        background: rgba(15, 23, 42, 0.75);
+    }
+
+    .strategy-modal-container {
+        width: 100%;
+        max-width: 950px;
+        background: #fff;
+        display: flex;
+        height: 600px;
+        overflow: hidden;
+        border-radius: 28px;
+        box-shadow: 0 40px 100px -20px rgba(0,0,0,0.6);
+        border: none;
+    }
+
+    .modal-left-pane {
+        flex: 1.2;
+        padding: 3.5rem;
+        border-right: 1px solid #f1f5f9;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-right-pane {
+        width: 380px;
+        background: #0d0f24;
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @media (max-width: 992px) {
+        .strategy-modal-container {
+            flex-direction: column;
+            height: auto;
+            max-height: 90vh;
+            max-width: 600px;
+            overflow-y: auto;
+        }
+        .modal-left-pane {
+            border-right: none;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 2rem;
+        }
+        .modal-right-pane {
+            width: 100%;
+            padding: 2rem;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .strategy-modal-overlay {
+            padding: 1rem;
+        }
+        .strategy-modal-container {
+            max-width: 100%;
+            border-radius: 20px;
+        }
+        .modal-left-pane, .modal-right-pane {
+            padding: 1.5rem;
+        }
+    }
 </style>
 @endpush
 
 @section('content')
-<div class="animated-entrance" x-data="{ 
+<div x-data="{ 
     showStrategyModal: false, 
     strategyStageId: '', 
     strategyTaskName: '',
@@ -207,7 +281,7 @@
     plannedTasks: [],
     async fetchPlannedTasks() {
         if(!this.strategyStageId) { this.plannedTasks = []; return; }
-        const res = await fetch(`/admin/projects/{{ $project->id }}/stages/${this.strategyStageId}/tasks`, {
+        const res = await fetch(`/admin/stages/${this.strategyStageId}/tasks`, {
             headers: { 'Accept': 'application/json' }
         });
         const data = await res.json();
@@ -231,6 +305,7 @@
         }
     }
 }">
+    <div class="animated-entrance">
     {{-- Banner Header --}}
     <div class="show-banner">
         <div class="banner-content">
@@ -301,6 +376,9 @@
         </button>
         <button class="tab-btn" onclick="switchTab('activity')">
             <i class="fas fa-history"></i> Mission Logs & Media
+        </button>
+        <button class="tab-btn" onclick="switchTab('daily-updates')">
+            <i class="fas fa-calendar-check"></i> Daily Updates
         </button>
     </div>
 
@@ -378,9 +456,7 @@
                                     @foreach($task->logs as $log)
                                     { id: {{ $log->id }}, date: '{{ $log->date->format('d M Y') }}', increment: {{ $log->work_done_percent }}, notes: '{{ $log->notes }}' },
                                     @endforeach
-                                ],
-                                new_increment: '',
-                                new_notes: ''
+                                ]
                             },
                             @endforeach
                         ],
@@ -415,39 +491,6 @@
                                 e.target.reset();
                             } else {
                                 alert(data.error || 'Validation failed');
-                            }
-                        },
-                        async submitDailyLog(task, index) {
-                            if(!task.new_increment || task.new_increment <= 0) return;
-
-                            const res = await fetch(`/admin/stage-tasks/${task.id}/logs`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                                body: JSON.stringify({
-                                    work_done_percent: task.new_increment,
-                                    date: new Date().toISOString().split('T')[0],
-                                    notes: task.new_notes
-                                })
-                            });
-
-                            if (!res.ok) {
-                                let errorData = { error: 'Log Deployment Failed' };
-                                try { errorData = await res.json(); } catch(e) {}
-                                alert(errorData.error || errorData.message || 'Field Data Error');
-                                return;
-                            }
-
-                            const data = await res.json();
-                            if(data.success) {
-                                task.progress = data.task_progress;
-                                task.status = task.progress >= 100 ? 'Completed' : 'In Progress';
-                                task.logs.unshift(data.log);
-                                task.new_increment = '';
-                                task.new_notes = '';
-                            } else {
-                                alert(data.error);
-                            }
-                        },
                         async removeTask(taskId, index) {
                             if(!confirm('Abort task?')) return;
                             const res = await fetch(`/admin/stage-tasks/${taskId}`, {
@@ -505,30 +548,6 @@
                                                 <button type="button" @click="removeTask(task.id, index)" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: #fee2e2; color: #ef4444; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                                                     <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
                                                 </button>
-                                            </div>
-                                        </div>
-                                        
-                                                </div>
-                                                
-                                                <div style="width: 100%; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem;">
-                                                    <div :style="'width: ' + task.progress + '%; background: ' + (task.progress < 100 ? 'var(--primary)' : '#10b981')" 
-                                                        style="height: 100%; transition: width 0.5s ease;"></div>
-                                                </div>
-
-                                                <div style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px;">
-                                                    <template x-for="log in task.logs" :key="log.id">
-                                                        <div style="background: #f8fafc; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; border: 1px solid #f1f5f9;">
-                                                            <div>
-                                                                <div style="font-size: 0.7rem; font-weight: 800; color: #0f172a;" x-text="log.date"></div>
-                                                                <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;" x-text="log.notes || 'No field notes recorded.'"></div>
-                                                            </div>
-                                                            <div style="font-weight: 900; font-size: 0.8rem; color: #10b981;">+<span x-text="log.increment"></span>%</div>
-                                                        </div>
-                                                    </template>
-                                                    <div x-show="task.logs.length == 0" style="text-align: center; color: #94a3b8; font-size: 0.75rem; padding: 20px 0;">
-                                                        No operational logs recorded yet.
-                                                    </div>
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -810,7 +829,305 @@
         </div>
     </div>{{-- /tab-activity --}}
 
-</div>{{-- /animated-entrance --}}
+    {{-- Tab: Daily Updates --}}
+    <div id="tab-daily-updates" class="tab-content" x-data="{
+        showUpdateModal: false,
+        showHistoryModal: false,
+        activeTask: null,
+        newIncrement: '',
+        newNote: '',
+        stages: [
+            @foreach($project->stages as $stage)
+            {
+                id: {{ $stage->id }},
+                name: '{{ addslashes($stage->name) }}',
+                tasks: [
+                    @foreach($stage->tasks as $task)
+                    {
+                        id: {{ $task->id }},
+                        name: '{{ addslashes($task->name) }}',
+                        weight: {{ (float)$task->weight }},
+                        progress: {{ (float)$task->progress }},
+                        status: '{{ $task->status }}',
+                        logs: [
+                            @foreach($task->logs()->latest()->get() as $log)
+                            {
+                                id: {{ $log->id }},
+                                date: '{{ $log->date->isToday() ? 'Today' : ($log->date->isYesterday() ? 'Yesterday' : $log->date->format('d M Y')) }}',
+                                increment: {{ (float)$log->work_done_percent }},
+                                notes: '{{ addslashes($log->notes) }}'
+                            },
+                            @endforeach
+                        ]
+                    },
+                    @endforeach
+                ]
+            },
+            @endforeach
+        ],
+        get totalProgress() {
+            let totalWeight = 0;
+            let weightedProgress = 0;
+            this.stages.forEach(s => {
+                s.tasks.forEach(t => {
+                    totalWeight += t.weight;
+                    weightedProgress += (t.weight * t.progress);
+                });
+            });
+            if(totalWeight === 0) return 0;
+            return (weightedProgress / totalWeight).toFixed(1);
+        },
+        openUpdateModal(task) {
+            this.activeTask = task;
+            this.newIncrement = '';
+            this.newNote = '';
+            this.showUpdateModal = true;
+        },
+        openHistoryModal(task) {
+            this.activeTask = task;
+            this.showHistoryModal = true;
+        },
+        async submitUpdate() {
+            if(!this.newIncrement || this.newIncrement <= 0) return;
+            const res = await fetch(`/admin/stage-tasks/${this.activeTask.id}/logs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    work_done_percent: this.newIncrement,
+                    date: new Date().toISOString().split('T')[0],
+                    notes: this.newNote
+                })
+            });
+            if(!res.ok) { alert('Update failed'); return; }
+            const data = await res.json();
+            if(data.success) {
+                this.activeTask.progress = parseFloat(data.task_progress);
+                this.activeTask.status = this.activeTask.progress >= 100 ? 'Completed' : 'In Progress';
+                this.activeTask.logs.unshift({
+                    id: data.log.id,
+                    date: 'Today',
+                    increment: parseFloat(data.log.work_done_percent),
+                    notes: data.log.notes
+                });
+                this.showUpdateModal = false;
+            } else {
+                alert(data.error);
+            }
+        }
+    }">
+        {{-- Top Section --}}
+        <div class="card-premium" style="background: #fff; border-radius: 20px; padding: 2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
+            <div>
+                <h2 style="font-size: 1.5rem; font-weight: 900; margin: 0; color: #0f172a;">Daily Updates</h2>
+                <div style="font-size: 0.85rem; color: #64748b; font-weight: 700; margin-top: 8px; display: flex; align-items: center;">
+                    Stage Progress: <span style="margin-left: 5px; color: #0f172a; font-weight: 900;" x-text="totalProgress + '%'"></span>
+                    <div style="display: inline-block; width: 120px; height: 8px; background: #e2e8f0; border-radius: 4px; margin-left: 15px; overflow: hidden;">
+                        <div :style="'width: ' + totalProgress + '%; height: 100%; transition: width 0.5s; background: ' + (totalProgress < 30 ? '#ef4444' : (totalProgress < 70 ? '#f59e0b' : '#10b981'))"></div>
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-top: 5px;">Last Updated: Today {{ now()->format('h:i A') }}</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-premium" style="background: var(--primary); color: #fff; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700;">
+                    <i class="fas fa-plus"></i> Add Update
+                </button>
+                <button class="btn-premium" style="background: #fff; color: #0f172a; border: 1px solid #e2e8f0; padding: 10px 20px; border-radius: 12px; font-weight: 700;">
+                    Filter <i class="fas fa-caret-down"></i>
+                </button>
+            </div>
+        </div>
+
+        {{-- Task List (Cards) --}}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+            <template x-for="stage in stages" :key="stage.id">
+                <template x-for="task in stage.tasks" :key="task.id">
+                    <div class="card-premium" style="background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                            <div style="font-weight: 800; color: #0f172a; font-size: 1.1rem; line-height: 1.3;" x-text="task.name"></div>
+                            <div style="font-weight: 900; font-size: 1rem;" 
+                                :style="task.progress < 30 ? 'color: #ef4444;' : (task.progress < 70 ? 'color: #f59e0b;' : 'color: #10b981;')"
+                                x-text="task.progress + '%'"></div>
+                        </div>
+                        
+                        <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin-bottom: 1.2rem;">
+                            <div :style="'width: ' + task.progress + '%; height: 100%; transition: width 0.3s; background: ' + (task.progress < 30 ? '#ef4444' : (task.progress < 70 ? '#f59e0b' : '#10b981'))"></div>
+                        </div>
+
+                        <div x-show="task.logs.length > 0" style="margin-bottom: 1.5rem;">
+                            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase;">Last update: <span x-text="task.logs[0].date"></span></div>
+                            <div style="font-size: 0.85rem; color: #475569; font-weight: 600; margin-top: 4px; display: flex; flex-direction: column; gap: 2px;">
+                                <div><span style="color: #10b981; font-weight: 800;">+<span x-text="task.logs[0].increment"></span>%</span></div>
+                                <div style="font-style: italic;" x-text="task.logs[0].notes ? `&quot;${task.logs[0].notes}&quot;` : 'No notes provided'"></div>
+                            </div>
+                        </div>
+                        <div x-show="task.logs.length === 0" style="margin-bottom: 1.5rem; font-size: 0.8rem; color: #94a3b8; font-style: italic;">
+                            No updates logged yet.
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: auto;">
+                            <button @click="openUpdateModal(task)" style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; padding: 10px; border-radius: 10px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fas fa-plus" style="color: var(--primary);"></i> Add Update
+                            </button>
+                            <button @click="openHistoryModal(task)" style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 10px; border-radius: 10px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fas fa-history"></i> View History
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </template>
+        </div>
+
+        {{-- Add Update Modal --}}
+        <div x-show="showUpdateModal" class="strategy-modal-overlay" style="display: none;" x-cloak>
+            <div @click.away="showUpdateModal = false" class="strategy-modal-container" style="max-width: 400px; height: auto; padding: 2.5rem; border-radius: 24px;">
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.4rem; font-weight: 900; margin: 0; color: #0f172a;">Add Daily Update</h3>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-top: 8px; font-weight: 700; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;" x-text="'Task: ' + (activeTask ? activeTask.name : '')"></div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 900; color: #475569; text-transform: uppercase; margin-bottom: 8px;">Progress Today (%)</label>
+                    <div style="position: relative;">
+                        <input type="number" x-model="newIncrement" placeholder="+10" max="100" min="1" style="width: 100%; padding: 14px 14px 14px 35px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 800; color: #0f172a; font-size: 1rem;">
+                        <i class="fas fa-plus" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #10b981; font-size: 0.9rem;"></i>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 900; color: #475569; text-transform: uppercase; margin-bottom: 8px;">Note</label>
+                    <textarea x-model="newNote" rows="3" placeholder="Pipe installation completed in 2 rooms" style="width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; color: #0f172a; resize: none; font-size: 0.9rem;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <button @click="showUpdateModal = false" style="flex: 1; background: #f1f5f9; color: #475569; border: none; padding: 14px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s;">
+                        Cancel
+                    </button>
+                    <button @click="submitUpdate()" style="flex: 1; background: var(--primary); color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(234,88,12,0.2);">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- History Modal --}}
+        <div x-show="showHistoryModal" class="strategy-modal-overlay" style="display: none;" x-cloak>
+            <div @click.away="showHistoryModal = false" class="strategy-modal-container" style="max-width: 480px; height: auto; max-height: 85vh; display: flex; flex-direction: column; border-radius: 24px;">
+                <div style="padding: 2rem 2.5rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 24px 24px 0 0;">
+                    <div>
+                        <h3 style="font-size: 1.3rem; font-weight: 900; margin: 0; color: #0f172a;" x-text="activeTask ? activeTask.name : ''"></h3>
+                        <div style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-top: 5px;">Full History</div>
+                    </div>
+                    <button @click="showHistoryModal = false" style="background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; cursor: pointer; transition: all 0.2s;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div style="padding: 1.5rem 2.5rem; overflow-y: auto; flex: 1; background: #f8fafc;">
+                    <template x-if="activeTask && activeTask.logs.length === 0">
+                        <div style="text-align: center; padding: 2rem 0;">
+                            <div style="width: 48px; height: 48px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                <i class="fas fa-history" style="color: #94a3b8; font-size: 1.2rem;"></i>
+                            </div>
+                            <p style="color: #64748b; font-size: 0.9rem; font-weight: 600; margin: 0;">No history available yet.</p>
+                        </div>
+                    </template>
+                    <div style="display: flex; flex-direction: column; gap: 1rem; position: relative;">
+                        {{-- Timeline line --}}
+                        <div style="position: absolute; left: 16px; top: 10px; bottom: 10px; width: 2px; background: #e2e8f0; z-index: 0;" x-show="activeTask && activeTask.logs.length > 0"></div>
+                        
+                        <template x-for="log in (activeTask ? activeTask.logs : [])" :key="log.id">
+                            <div style="display: flex; gap: 15px; position: relative; z-index: 1;">
+                                <div style="width: 34px; height: 34px; background: #fff; border: 2px solid #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 5px;">
+                                    <div style="width: 10px; height: 10px; background: var(--primary); border-radius: 50%;"></div>
+                                </div>
+                                <div style="flex: 1; background: #fff; padding: 1.2rem; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                        <div style="font-weight: 800; color: #0f172a; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                                            <i class="far fa-calendar-alt" style="color: #94a3b8;"></i>
+                                            <span x-text="log.date"></span>
+                                        </div>
+                                        <div style="font-weight: 900; color: #10b981; font-size: 1.1rem; background: #dcfce7; padding: 2px 8px; border-radius: 6px;" x-text="'+' + log.increment + '%'"></div>
+                                    </div>
+                                    <div style="font-size: 0.85rem; color: #475569; font-weight: 500; line-height: 1.5;" x-text="log.notes || 'No notes provided'"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <div style="padding: 1.5rem 2.5rem; background: #fff; border-top: 1px solid #f1f5f9; border-radius: 0 0 24px 24px;">
+                    <button @click="showHistoryModal = false" style="width: 100%; background: #f1f5f9; color: #475569; border: none; padding: 14px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s;">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>{{-- /tab-daily-updates --}}
+
+    </div>{{-- /animated-entrance --}}
+
+    <div x-show="showStrategyModal" class="strategy-modal-overlay" x-cloak
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95">
+        
+        <div @click.away="showStrategyModal = false" class="strategy-modal-container card-premium">
+            {{-- Left Pane: Form --}}
+            <div class="modal-left-pane">
+                <div style="margin-bottom: 2.5rem;">
+                    <h2 style="font-size: 1.8rem; font-weight: 900; color: #0f172a; margin: 0;">Strategic Planning</h2>
+                    <p style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Define weighted sub-tasks for operational intelligence.</p>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 1.8rem; flex: 1;">
+                    <div>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Target Phase</label>
+                        <select x-model="strategyStageId" @change="fetchPlannedTasks()" style="width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 16px; font-weight: 700; background: #f8fafc;">
+                            <option value="">Select Phase...</option>
+                            @foreach($project->stages as $s)
+                            <option value="{{ $s->id }}">{{ $s->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Objective Name</label>
+                        <input type="text" x-model="strategyTaskName" placeholder="e.g. Columns reinforcement" style="width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 16px; font-weight: 700;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Weight (%)</label>
+                        <input type="number" x-model="strategyTaskWeight" placeholder="0.00" style="width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 16px; font-weight: 700;">
+                    </div>
+                    <button @click="deployObjective()" style="width: 100%; background: #0f172a; color: #fff; border: none; padding: 18px; border-radius: 20px; font-weight: 900; cursor: pointer; margin-top: auto;">
+                        Deploy Objective
+                    </button>
+                </div>
+            </div>
+            {{-- Right Pane: Ledger --}}
+            <div class="modal-right-pane">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h3 style="font-size: 0.85rem; font-weight: 900; color: #0f172a; text-transform: uppercase;">Strategy Ledger</h3>
+                    <button @click="showStrategyModal = false" style="background: none; border: none; color: #94a3b8; cursor: pointer;"><i class="fas fa-times"></i></button>
+                </div>
+                <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                    <template x-for="ptask in plannedTasks" :key="ptask.id">
+                        <div style="background: #fff; padding: 15px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between;">
+                            <div style="font-size: 0.85rem; font-weight: 800;" x-text="ptask.name"></div>
+                            <div style="font-size: 0.8rem; font-weight: 900; color: #10b981;" x-text="ptask.weight + '%'"></div>
+                        </div>
+                    </template>
+                </div>
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px dashed #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-size: 0.75rem; font-weight: 900; color: #64748b;">TOTAL WEIGHT</span>
+                        <span style="font-size: 1.1rem; font-weight: 900;" x-text="plannedTasks.reduce((acc, t) => acc + parseFloat(t.weight), 0).toFixed(1) + '%'"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>{{-- /x-data scope --}}
 
 @push('scripts')
 <script>
@@ -846,69 +1163,6 @@
     });
 </script>
 
-{{-- Global Strategy Modal --}}
-<div x-show="showStrategyModal" 
-    x-transition:enter="transition ease-out duration-300"
-    x-transition:enter-start="opacity-0 scale-95"
-    x-transition:enter-end="opacity-100 scale-100"
-    x-transition:leave="transition ease-in duration-200"
-    x-transition:leave-start="opacity-100 scale-100"
-    x-transition:leave-end="opacity-0 scale-95"
-    style="position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 2rem; backdrop-filter: blur(15px); background: rgba(15, 23, 42, 0.75);"
-    x-cloak>
-    
-    <div @click.away="showStrategyModal = false" class="card-premium" style="width: 100%; max-width: 950px; background: #fff; padding: 0; border: none; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.6); display: flex; height: 600px; overflow: hidden; border-radius: 28px;">
-        {{-- Left Pane: Form --}}
-        <div style="flex: 1.2; padding: 3.5rem; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column;">
-            <div style="margin-bottom: 2.5rem;">
-                <h2 style="font-size: 1.8rem; font-weight: 900; color: #0f172a; margin: 0;">Strategic Planning</h2>
-                <p style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Define weighted sub-tasks for operational intelligence.</p>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 1.8rem; flex: 1;">
-                <div>
-                    <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Target Phase</label>
-                    <select x-model="strategyStageId" @change="fetchPlannedTasks()" style="width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 16px; font-weight: 700; background: #f8fafc;">
-                        <option value="">Select Phase...</option>
-                        @foreach($project->stages as $s)
-                        <option value="{{ $s->id }}">{{ $s->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Objective Name</label>
-                    <input type="text" x-model="strategyTaskName" placeholder="e.g. Columns reinforcement" style="width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 16px; font-weight: 700;">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.7rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Weight (%)</label>
-                    <input type="number" x-model="strategyTaskWeight" placeholder="0.00" style="width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 16px; font-weight: 700;">
-                </div>
-                <button @click="deployObjective()" style="width: 100%; background: #0f172a; color: #fff; border: none; padding: 18px; border-radius: 20px; font-weight: 900; cursor: pointer; margin-top: auto;">
-                    Deploy Objective
-                </button>
-            </div>
-        </div>
-        {{-- Right Pane: Ledger --}}
-        <div style="width: 380px; background: #f8fafc; padding: 3rem; display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h3 style="font-size: 0.85rem; font-weight: 900; color: #0f172a; text-transform: uppercase;">Strategy Ledger</h3>
-                <button @click="showStrategyModal = false" style="background: none; border: none; color: #94a3b8; cursor: pointer;"><i class="fas fa-times"></i></button>
-            </div>
-            <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
-                <template x-for="ptask in plannedTasks" :key="ptask.id">
-                    <div style="background: #fff; padding: 15px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between;">
-                        <div style="font-size: 0.85rem; font-weight: 800;" x-text="ptask.name"></div>
-                        <div style="font-size: 0.8rem; font-weight: 900; color: #10b981;" x-text="ptask.weight + '%'"></div>
-                    </div>
-                </template>
-            </div>
-            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px dashed #e2e8f0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="font-size: 0.75rem; font-weight: 900; color: #64748b;">TOTAL WEIGHT</span>
-                    <span style="font-size: 1.1rem; font-weight: 900;" x-text="plannedTasks.reduce((acc, t) => acc + parseFloat(t.weight), 0).toFixed(1) + '%'"></span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 @endpush
 @endsection

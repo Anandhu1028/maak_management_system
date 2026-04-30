@@ -10,6 +10,14 @@ use App\Models\StageTask;
 
 class ProjectStageTaskController extends Controller
 {
+    public function index(ProjectStage $stage)
+    {
+        return response()->json([
+            'success' => true,
+            'tasks' => $stage->tasks()->select('id', 'name', 'weight', 'progress', 'status')->get()
+        ]);
+    }
+
     public function store(Request $request, ProjectStage $stage)
     {
         $validated = $request->validate([

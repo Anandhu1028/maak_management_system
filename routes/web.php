@@ -31,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('stages/{stage}/status', [ProjectController::class, 'updateStageStatus'])->name('stages.update-status');
         
         // Project Stage Tasks
+        Route::get('stages/{stage}/tasks', [ProjectStageTaskController::class, 'index'])->name('stage-tasks.index');
         Route::post('stages/{stage}/tasks', [ProjectStageTaskController::class, 'store'])->name('stage-tasks.store');
         Route::patch('stage-tasks/{task}/progress', [ProjectStageTaskController::class, 'updateProgress'])->name('stage-tasks.update-progress');
         Route::delete('stage-tasks/{task}', [ProjectStageTaskController::class, 'destroy'])->name('stage-tasks.destroy');
